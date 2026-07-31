@@ -1,0 +1,20 @@
+{
+  "HSN_6307": {
+    "gst_rate": 5.0,
+    "effective_from": "2022-05-01",
+    "notification_no": "1/2017-Central Tax (Rate), Schedule I entry 224",
+    "rate_confidence": "medium",
+    "rate_scope": "heading",
+    "rate_source": "manual_seed",
+    "source_note": "Seeded from CGST ready reckoner 01.05.2022, Schedule I entry 224 - other made up textile articles, sale value not exceeding Rs 1000 per piece (2.5% CGST = 5% total). Figure supplied by the task specification. NOT independently verified against the CBIC portal: this build runs offline with no network access, so the notification text could not be re-read. The 2022 reckoner predates the 2025 rate revision and Notification 9/2025-Integrated Tax (Rate) was not cross-checked for this heading - confirm before any figure is relied on for invoicing."
+  },
+  "HSN_63079091": {
+    "gst_rate": 5.0,
+    "effective_from": "2022-05-01",
+    "notification_no": "1/2017-Central Tax (Rate), Schedule I entry 224",
+    "rate_confidence": "low",
+    "rate_scope": "heading",
+    "rate_source": "manual_seed",
+    "source_note": "Inherited from the seeded parent heading HSN_6307, of which 63079091 (textile face masks without a replaceable filter or mechanical parts) is a tariff item. No entry specific to 63079091 exists in the knowledge base, so the heading-level figure is applied and rate_scope is recorded as 'heading'. rate_confidence is deliberately set one step lower than the parent ('low') because the value is inherited rather than matched. Carries the same caveats as HSN_6307: supplied by the task specification, not independently verified offline, and predating the 2025 revision."
+  }
+}

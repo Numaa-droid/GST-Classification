@@ -1,0 +1,230 @@
+version: 1
+
+# Every URL below was fetched live and its parse verified. Re-verify any time:
+#   python knowledge_builder_verified.py --check
+#
+# Source selection rule: structured beats unstructured. xlsx / JSON / HTML table
+# is used wherever an official one exists (SAC, NIC, notifications, updates
+# feed). Only HSN + chapter/section notes fall back to PDF, because no
+# government body publishes the tariff nomenclature as a machine-readable file
+# and DGFT's ITC-HS lookup is behind a login + CSRF token we will not touch.
+# A source is ingested unless it carries `enabled: false`.
+output_dir: knowledge
+timeout: 180
+
+sources:
+  # ---------------------------------------------------------------- HSN + notes
+  # One 1020-page PDF carries the whole ITC(HS) nomenclature: Section "Main
+  # Notes", per-Chapter "Main Notes", policy/licensing notes, and the full
+  # 2/4/6/8-digit code list. Emits HSN, SECTION_NOTE and CHAPTER_NOTE.
+  - id: itchs_schedule
+    entity_type: HSN
+    parser: pdf_itchs_schedule
+    document_type: pdf
+    url: https://content.dgft.gov.in/Website/Notification_ITCHS.pdf
+    authority: DGFT
+    document: ITC(HS) Schedule - tariff, Section Notes, Chapter Notes
+    version: "2022"
+
+  # ------------------------------------------------- tariff explanatory notes
+  - id: itchs_explanatory_import
+    entity_type: TARIFF_EXPLANATORY_NOTE
+    parser: pdf_pages
+    document_type: pdf
+    url: https://content.dgft.gov.in/Website/read_0.pdf
+    authority: DGFT
+    document: How to read the Import Policy (Schedule-1 explanatory note)
+    version: "2017"
+
+  - id: itchs_explanatory_export
+    entity_type: TARIFF_EXPLANATORY_NOTE
+    parser: pdf_pages
+    document_type: pdf
+    url: https://content.dgft.gov.in/Website/how to read export policy.pdf
+    authority: DGFT
+    document: How to read the Export Policy (Schedule-2 explanatory note)
+    version: "2018"
+
+  - id: itchs_general_notes_import
+    entity_type: TARIFF_EXPLANATORY_NOTE
+    parser: pdf_pages
+    document_type: pdf
+    url: https://content.dgft.gov.in/Website/General+Notes+regarding+Import+Policy_AsOn11082025.pdf
+    authority: DGFT
+    document: General Notes regarding Import Policy
+    version: "2025-08-11"
+
+  # ---------------------------------------------------------------------- SAC
+  - id: sac_scheme
+    entity_type: SAC
+    parser: xlsx_sac_scheme
+    document_type: xlsx
+    url: https://cbic-gst.gov.in/pdf/Classification%20Scheme%20for%20Services%20under%20GST.xlsx
+    authority: CBIC
+    document: CBIC 6-digit Scheme of Classification of Services
+    # Cross-checked against the notified annexure to 11/2017-CTR
+    # (cbic-gst.gov.in/hindi/pdf/central-tax-rate/Notification11-CGST-Annexure.pdf):
+    # all 567 notified 6-digit codes are present. This xlsx is the "proposed"
+    # scheme and carries exactly one code the notification does not, 997147.
+    version: "2017"
+
+  # ----------------------------------------------------------------- NIC 2008
+  - id: nic_2008
+    entity_type: NIC
+    parser: xlsx_code_desc
+    document_type: xlsx
+    url: https://www.mospi.gov.in/sites/default/files/main_menu/national_product_classification/NIC_2008.xlsx
+    authority: MoSPI
+    document: National Industrial Classification 2008
+    version: "2008"
+    options:
+      code_col: niccode
+      desc_col: nicdesc
+
+  # ------------------------------------------------- GST rate notifications
+  - id: cgst_rate_notifications
+    entity_type: GST_RATE_NOTIFICATION
+    parser: html_notification_table
+    document_type: html
+    url: https://cbic-gst.gov.in/hindi/central-tax-rate.html
+    authority: CBIC
+    document: Central Tax (Rate) notifications
+    version: "2017-2022"
+
+  - id: igst_rate_notifications
+    entity_type: GST_RATE_NOTIFICATION
+    parser: html_notification_table
+    document_type: html
+    url: https://cbic-gst.gov.in/hindi/integrated-tax-rate.html
+    authority: CBIC
+    document: Integrated Tax (Rate) notifications
+    version: "2017-2022"
+
+  # Live "what changed" feed from the CBIC tax portal -- the incremental channel.
+  # ponytail: the portal's full-list and Solr search endpoints answer HTTP 500
+  # server-side, so bulk history comes from the two HTML pages above (which stop
+  # at 2022). Add a source here when CBIC fixes /api/cbic-search.
+  - id: cbic_gst_updates
+    entity_type: GST_RATE_NOTIFICATION
+    parser: cbic_updates_api
+    document_type: json
+    url: https://taxinformation.cbic.gov.in/api/cbic-notification-msts/fetchUpdatesByTaxId/1000001
+    authority: CBIC
+    document: CBIC tax portal - latest GST updates
+    version: live
+    options:
+      pdf_base: https://taxinformation.cbic.gov.in/
+
+  # ------------------------------------------------------------- GST rates
+  # The rate schedules are the annexures to the rate notifications; there is no
+  # structured (xlsx/JSON) rate file on any government site, and these PDF URLs
+  # are the ones our own notification extraction resolved, not guessed.
+  #
+  # Current goods rates come from 9/2025, which SUPERSEDES 1/2017 outright (GST
+  # 2.0, w.e.f. 22-09-2025) -- so no amendment folding was needed. The 2017
+  # schedules below carry effective_to and are kept as history: --merge only ever
+  # answers "the rate" from a schedule still in force.
+  #
+  # ponytail: 10/2025 (current goods exemptions) and 11/2025 (current service
+  # rates) are NOT here, so service rates remain 2017-regime. Every published
+  # route is closed: the portal's year/category listing and Solr search return
+  # HTTP 500, its /content/tax_repository/... path returns 401, and while
+  # /api/cbic-notification-msts/download/<id>/ENG works, ids are not
+  # enumerable without crawling. Add both the moment a listing endpoint or a
+  # mirrored PDF appears.
+  - id: igst_rate_schedule_goods_2025
+    entity_type: GST_RATE
+    parser: pdf_goods_rate_schedule
+    document_type: pdf
+    url: https://courier.cbic.gov.in/ECCS/advisory/2025/NOTIFICATION%20NO.%209_2025-INTEGRATED%20TAX%20(RATE)%20-1759486719.pdf
+    authority: CBIC
+    document: Notification 9/2025-Integrated Tax (Rate) - current GST rate schedule for goods
+    version: "2025-09-22"
+    options:
+      # an IGST schedule states the whole GST rate, not half of it
+      rate_multiplier: 1
+      notification_no: 9/2025-Integrated Tax (Rate)
+      effective_from: "2025-09-22"
+
+  - id: cgst_rate_schedule_goods
+    entity_type: GST_RATE
+    parser: pdf_goods_rate_schedule
+    document_type: pdf
+    url: https://cbic-gst.gov.in/hindi/pdf/central-tax-rate/Notification-for-CGST-rate-Schedule.pdf
+    authority: CBIC
+    document: Notification 1/2017-CTR - CGST rate schedule for goods (Schedules I-VI)
+    version: "2017-07-01"
+    options:
+      notification_no: 1/2017-Central Tax (Rate)
+      effective_from: "2017-07-01"
+      effective_to: "2025-09-21"      # superseded by 9/2025
+
+  - id: cgst_exempt_goods
+    entity_type: GST_RATE
+    parser: pdf_goods_rate_schedule
+    document_type: pdf
+    url: https://cbic-gst.gov.in/hindi/pdf/central-tax-rate/Notification-for-CGST-exemption.pdf
+    authority: CBIC
+    document: Notification 2/2017-CTR - goods exempt from CGST (NIL rate)
+    version: "2017-07-01"
+    options:
+      nil_rate: true
+      notification_no: 2/2017-Central Tax (Rate)
+      effective_from: "2017-07-01"
+      effective_to: "2025-09-21"      # superseded by 10/2025 (see ponytail note)
+
+  - id: cgst_rate_schedule_services
+    entity_type: GST_RATE
+    parser: pdf_service_rate_schedule
+    document_type: pdf
+    url: https://cbic-gst.gov.in/hindi/pdf/central-tax-rate/Notification11-CGST.pdf
+    authority: CBIC
+    document: Notification 11/2017-CTR - CGST rates for services
+    version: "2017-07-01"
+    options:
+      notification_no: 11/2017-Central Tax (Rate)
+      effective_from: "2017-07-01"
+
+  - id: cgst_exempt_services
+    entity_type: GST_RATE
+    parser: pdf_service_rate_schedule
+    document_type: pdf
+    url: https://cbic-gst.gov.in/hindi/pdf/central-tax-rate/Notification12-CGST.pdf
+    authority: CBIC
+    document: Notification 12/2017-CTR - services exempt from CGST (NIL rate)
+    version: "2017-07-01"
+    options:
+      notification_no: 12/2017-Central Tax (Rate)
+      effective_from: "2017-07-01"
+
+  # -------------------------------------------------------- compensation cess
+  - id: compensation_cess_notifications
+    entity_type: GST_RATE_NOTIFICATION
+    parser: html_notification_table
+    document_type: html
+    url: https://cbic-gst.gov.in/hindi/compensation-tax.html
+    authority: CBIC
+    document: Compensation Cess (Rate) notifications
+    version: "2017-2021"
+
+  - id: cess_rate_schedule
+    entity_type: GST_RATE
+    parser: pdf_cess_schedule
+    document_type: pdf
+    url: https://cbic-gst.gov.in/hindi/pdf/compensation-tax/notfctn-1-compensation-cess-english.pdf
+    authority: CBIC
+    document: Notification 1/2017-Compensation Cess (Rate) - cess schedule
+    version: "2017-07-01"
+    options:
+      notification_no: 1/2017-Compensation Cess (Rate)
+      effective_from: "2017-07-01"
+
+  # -------------------------------------------------------------------- FAQs
+  - id: gst_rates_faq
+    entity_type: GST_FAQ
+    parser: html_qa_table
+    document_type: html
+    url: https://cbic-gst.gov.in/gst-rates-faq.html
+    authority: CBIC
+    document: GST Rates FAQs
+    version: current

@@ -1,0 +1,41 @@
+{
+  "blocked_codes": {
+    "1111": "Placeholder row - description is literally 'AKASH test'",
+    "2031": "Chapter 02 artifact - 0203.1 (fresh/chilled swine meat), leading zero stripped",
+    "2032": "Chapter 02 artifact - 0203.2 (frozen swine meat)",
+    "2042": "Chapter 02 artifact - 0204.2 (sheep meat, fresh/chilled)",
+    "2044": "Chapter 02 artifact - 0204.4 (sheep meat, frozen)",
+    "2062": "Chapter 02 artifact - 0206.2 (bovine offal, frozen)",
+    "2064": "Chapter 02 artifact - 0206.4 (swine offal, frozen)",
+    "2071": "Chapter 02 artifact - 0207.1 (fowls, Gallus domesticus)",
+    "2072": "Chapter 02 artifact - 0207.2 (turkeys)",
+    "2073": "Chapter 02 artifact - 0207.3 (ducks, geese, guinea fowls)",
+    "2075": "Chapter 02 artifact - 0207.5 (geese)",
+    "2109": "Chapter 02 artifact - 0210.9 (meat flours and meals)",
+    "2851": "Empty placeholder - description is '-'"
+  },
+  "_meta": {
+    "purpose": "Codes that exist in HSN_MSTR but are not real HSN headings. Never index, enrich, or return these.",
+    "hardcoded_count": 13,
+    "scan_detected_count": 0,
+    "scan_detected": [],
+    "scan_status": "NOT RUN - source unavailable",
+    "scan_note": "The spec's detection rule keys on HSN_MSTR's ALL-CAPS heading convention. HSN_SAC.xlsx is not present in the project. The rule was trialled against the substitute source (merged 1.jsonl) and is not transferable: only 92 of 1113 headings there are ALL-CAPS while 1020 are mostly lowercase, so the rule flags 89 ordinary headings such as 'Live bovine animals.' as artifacts. No scan-detected additions are claimed. Re-run against HSN_MSTR when it is available.",
+    "verified_absent_from_output": true,
+    "verified_absent_from_merged": [
+      "1111",
+      "2031",
+      "2032",
+      "2042",
+      "2044",
+      "2062",
+      "2064",
+      "2071",
+      "2072",
+      "2073",
+      "2075",
+      "2109",
+      "2851"
+    ]
+  }
+}
