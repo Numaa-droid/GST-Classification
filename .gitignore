@@ -1,0 +1,17 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Build artifacts — regenerate with: python scripts/rebuild_all.py
+# These are intermediate stages; enriched_complete.jsonl is the tracked output.
+enriched_v6.jsonl
+enriched_final.jsonl
+updat_enriched.jsonl
+needs_one_liner.txt
+
+# Editor / OS noise
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store
